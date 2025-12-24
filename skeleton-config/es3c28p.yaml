@@ -125,17 +125,17 @@ speaker:
 # you need to start it, I've commented out the line 
 # in the toggle switch down below to start logging.
 #
-# The microphone is labeled L420 but I can't seem to find an associated
-# datasheet.
+# here is the data sheet for the microphone
+# https://www.lcdwiki.com/res/PublicFile/MEMS_MIC_LMA2718B381-OA7.PDF
 microphone:
   - platform: i2s_audio
     id: my_mic
     i2s_audio_id: i2s_audio_bus
     i2s_din_pin: GPIO${i2s_din_pin}
-    adc_type: external
-    channel: left             # not sure which channel it needs to be on
+    adc_type: external         # certain this is correct given the schematic
+    channel: right             # not sure which channel it needs to be on, I believe it's likely the right channel
     #correct_dc_offset: true  # I don't believe this needs to be true
-    pdm: false
+    pdm: false  # I don't believe this is a PDM microphone
     on_data:
       - logger.log:
           format: "%s"
