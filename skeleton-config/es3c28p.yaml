@@ -1,0 +1,313 @@
+substitutions:
+  device_name: "esphome-web-e8dcb0"
+
+  sda_pin_bus: "16"         # I2C Bus A SDA
+  scl_pin_bus: "15"         # I2C BUS A SCL
+
+  i2s_lrclk_pin: "7"        # I2S LRCLK (Word Select)
+  i2s_bclk_pin: "5"         # I2S BCLK (Bit Clock)
+  i2s_mclk_pin: "4"         # I2S MCLK (Master Clock)
+  i2s_din_pin: "6"          # I2S Data In (Mic)
+  i2s_dout_pin: "8"         # I2S Data Out (Speaker)
+
+  spi_clk_pin: "12"         # SPI CLK Pin
+  spi_mosi_pin: "11"        # SPI MOSI PIN
+  spi_miso_pin: "13"        # SPI MISO PIN
+
+  backlight_pin: "45"       # Display backlight
+
+  speaker_enable_pin: "1"   # Speaker Enable
+
+  battery_level_pin: "9"    # Battery level
+
+  rgb_led_pin: "42"         
+
+esphome:
+  name: ${device_name}
+  friendly_name: ES3C28P
+  min_version: 2025.11.0
+  name_add_mac_suffix: false
+
+########################
+# Board setup
+########################
+esp32:
+  variant: esp32s3
+  framework:
+    type: esp-idf
+
+
+logger:
+
+api:
+
+ota:
+- platform: esphome
+
+# Enable PSRAM 
+psram:
+  mode: octal
+  speed: 80MHz          
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  use_psram: true # offload network buffers to psram
+
+########################
+# I/O && Bus definitions
+########################
+
+i2c:
+  - id: bus
+    sda: GPIO${sda_pin_bus}
+    scl: GPIO${scl_pin_bus}
+    scan: true
+    
+    
+spi:
+  clk_pin: GPIO${spi_clk_pin}
+  mosi_pin: GPIO${spi_mosi_pin}
+  miso_pin: GPIO${spi_miso_pin}
+
+output:
+  - platform: gpio
+    pin: GPIO${speaker_enable_pin}
+    id: speaker_amp_enable
+    inverted: true
+  - platform: gpio
+    pin: GPIO${backlight_pin}
+    id: backlight
+  - platform: gpio
+    pin: GPIO2
+    id: boiler_output
+
+sensor:
+  - platform: adc
+    pin: GPIO${battery_level_pin}
+    name: "Battery Level"
+    update_interval: 60s
+
+########################
+# Audio config
+########################
+
+i2s_audio:
+  - id: i2s_audio_bus
+    i2s_lrclk_pin: GPIO${i2s_lrclk_pin}
+    i2s_bclk_pin: GPIO${i2s_bclk_pin}
+    i2s_mclk_pin: GPIO${i2s_mclk_pin}
+    # I've been unable to get the microphone to work
+    # otherwise all the home assistant voice stuff should work
+
+audio_dac:
+  - platform: es8311
+    i2c_id: bus
+    id: es8311_dac
+    address: 0x18
+    bits_per_sample: 16bit
+    sample_rate: 16000
+    use_mclk: true
+
+
+speaker:
+  - platform: i2s_audio
+    id: my_speaker
+    i2s_dout_pin: GPIO${i2s_dout_pin}
+    dac_type: external
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    channel: mono
+    audio_dac: es8311_dac
+    buffer_duration: 100ms
+
+# I cannot get the microphone to work 
+# you need to start it, I've commented out the line 
+# in the toggle switch down below to start logging.
+#
+# The microphone is labeled L420 but I can't seem to find an associated
+# datasheet.
+microphone:
+  - platform: i2s_audio
+    id: my_mic
+    i2s_audio_id: i2s_audio_bus
+    i2s_din_pin: GPIO${i2s_din_pin}
+    adc_type: external
+    channel: left             # not sure which channel it needs to be on
+    #correct_dc_offset: true  # I don't believe this needs to be true
+    pdm: false
+    on_data:
+      - logger.log:
+          format: "%s"
+          args: ['format_hex_pretty(x).c_str()']
+
+
+########################
+# Display and touchscreen
+########################
+
+display:
+  - platform: mipi_spi
+    model: ili9341
+    dc_pin: GPIO46
+    cs_pin: GPIO10
+    invert_colors: true
+    dimensions:
+      width: 240
+      height: 320
+    auto_clear_enabled: false
+    update_interval: never
+
+touchscreen:
+  - platform: ft63x6
+    interrupt_pin: GPIO17
+    on_touch:
+    # Log out each touch event
+    - lambda: |-
+          ESP_LOGI("cal", "x=%d, y=%d, x_raw=%d, y_raw=%0d",
+              touch.x,
+              touch.y,
+              touch.x_raw,
+              touch.y_raw
+              );
+
+########################
+# RGB LED
+########################
+
+light:
+  - platform: esp32_rmt_led_strip
+    rgb_order: GRB
+    pin: GPIO${rgb_led_pin}
+    num_leds: 1
+    chipset: ws2812
+    name: "Status LED"
+    id: my_status_led
+    
+    # Optional: Add some fun effects
+    effects:
+      - addressable_rainbow:
+          name: Rainbow
+      - pulse:
+          name: Slow Pulse
+
+########################
+# GUI Demo
+########################
+
+font:
+  - file: "gfonts://Roboto"
+    id: large_numbers
+    glyphs: "0123456789°"
+    size: 34
+
+# Very basic demo UI
+lvgl:
+  widgets:
+
+    - label:
+        id: temp_display_label
+        align: CENTER
+        text_font: large_numbers
+        text: '00'
+    - button:
+        align: TOP_RIGHT
+        id: ptt_button
+        text: "PTT"
+        on_press:
+          - lambda: |-
+                ESP_LOGI("microphone","enabled");
+ 
+    - switch:
+        align: BOTTOM_MID
+        id: switch_id
+        on_value:
+          then:
+            - if:
+                condition: 
+                  lambda: "return x;"
+                then:
+                  - light.turn_on:
+                      id: my_status_led
+                      effect: "Slow Pulse"
+                  # - microphone.capture:
+                else:
+                  - light.turn_off: my_status_led
+                  - microphone.stop_capture:
+    - arc:
+        align: CENTER
+        id: arc_id
+        value: 75
+        width: 210
+        height: 210
+        min_value: 0
+        max_value: 100
+        adjustable: true 
+        on_value:
+          then:
+            - lvgl.label.update:
+                      # Update the mock temperature display
+                      id: temp_display_label
+                      text: !lambda 'return str_sprintf("%.0f°", x);'
+            - speaker.play:
+                id: my_speaker
+                data: [0x7F, 0x00, 0x81, 0x00]
+
+
+########################
+# Home Assitant Integrations
+########################
+
+# this will allow home assistant to send WAV data to the device
+# which enables music / text to speech. If you visit the 
+# device page in esphome under Settings->ESPHome->Devices 
+# you can click on the icon for the media player and send audio
+# to this device now.
+media_player:
+  - platform: speaker
+    name: None
+    id: external_media_player
+    buffer_size: 32768
+    announcement_pipeline:
+      speaker: my_speaker
+      format: WAV # In other examples I've seen FLAC, but I can't get it working 
+
+# Expose control of the speaker and backlight
+switch:
+  - platform: output
+    name: "Speaker Amplifier"
+    output: speaker_amp_enable
+    restore_mode: ALWAYS_ON
+  - platform: output
+    name: "Backlight"
+    output: backlight
+    restore_mode: ALWAYS_ON
+  
+########################
+# Home Assitant Voice Assistant
+########################
+
+# None of this works as I can't seem to get the microphone to 
+# work. 
+micro_wake_word:
+  id: my_wakeword
+  on_wake_word_detected:
+    - voice_assistant.start:
+        wake_word: !lambda return wake_word;
+    - lambda: |-
+          ESP_LOGI("wake word %s","detected");
+  models:
+    - model: okay_nabu
+
+voice_assistant:
+  id: my_voice_assistant
+  micro_wake_word: my_wakeword
+  use_wake_word: true
+  microphone: my_mic
+  speaker: my_speaker
+  on_listening:
+    - light.turn_on: 
+        id: my_status_led
+        blue: 100%
+  on_end:
+    - light.turn_off: my_status_led
