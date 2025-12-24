@@ -27,6 +27,7 @@ requirements to get the board working with home assistant. I've tested most of
 the functionality, and the only thing I've be unable to get working is the
 microphone. 
 
+
 ### How to use this repo
 
  You will need Home Assistant and ESPHome setup.
@@ -35,6 +36,8 @@ microphone.
  * Pair it to your WIFI network (you might have to re-provision it multiple times to get it to work)
  * Visit your ESPHome Builder page and your board should show up as available to be added, add it. 
  * Copy and paste the skeleton config into your newly provisioned device, click save and install
+ * Go to the Settings -> Devices -> ESPHome and find the device, click on it
+ * From here you can click on the speaker to send text to speech to it. 
 
 
 ## What the board looks like:
