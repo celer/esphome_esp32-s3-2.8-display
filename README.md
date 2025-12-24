@@ -33,7 +33,8 @@ microphone.
 
  * Visit web.esphome.io and provision this board
  * Pair it to your WIFI network (you might have to re-provision it multiple times to get it to work)
- * Visit your ESPBuilder page and your board should show up as available to be added, add it.
+ * Visit your ESPHome Builder page and your board should show up as available to be added, add it. 
+ * Copy and paste the skeleton config into your newly provisioned device, click save and install
 
 
 ## What the board looks like:
