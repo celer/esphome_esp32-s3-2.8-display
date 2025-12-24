@@ -31,9 +31,9 @@ microphone.
 
  You will need Home Assistant and ESPHome setup.
 
- # Visit web.esphome.io and provision this board
- # Pair it to your WIFI network (you might have to re-provision it multiple times to get it to work)
- # Visit your ESPBuilder page and your board should show up as available to be added, add it.
+ * Visit web.esphome.io and provision this board
+ * Pair it to your WIFI network (you might have to re-provision it multiple times to get it to work)
+ * Visit your ESPBuilder page and your board should show up as available to be added, add it.
 
 
 # What the board looks like:
