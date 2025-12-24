@@ -3,9 +3,9 @@
 This repo contains a skeleton esphome config for the Hosyond ESP32-S3 Touchscreen Module, 2.8" 240x320 IPS LCD EPS32 Display with WiFi Bluetooth Capacitive Touch Screen.
 The text on the back of the board reads:
 
-| 2.8" LCD Display
-| ESP32-S3 240x320
-| Capacitive Touch
+> 2.8" LCD Display
+> ESP32-S3 240x320
+> Capacitive Touch
 
 And might be listed as ES3C28P or ES3N28P
 
