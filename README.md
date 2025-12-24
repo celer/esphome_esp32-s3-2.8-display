@@ -15,19 +15,19 @@ Lots of technical details about the board can be found
 It's available [here](https://www.amazon.com/dp/B0FKG7WRWV) from Amazon, [here]
 (https://www.ebay.com/itm/376660193185) on Ebay, etc.
 
-## Home Assistant and ESPHome
+### Home Assistant and ESPHome
 
 [ESPHome](https://esphome.io/) is a plugin for [Home Assistant](https://www.home-assistant.io/) which allows you to write custom firmware
 for ESP based boards which are then integrated automatically with Home Assistant.
 
-## What is in this repo?
+### What is in this repo?
 
 This is a skeleton of a config for this board demonstrating the basic
 requirements to get the board working with home assistant. I've tested most of
 the functionality, and the only thing I've be unable to get working is the
 microphone. 
 
-## How to use this repo
+### How to use this repo
 
  You will need Home Assistant and ESPHome setup.
 
